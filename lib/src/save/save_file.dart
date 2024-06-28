@@ -219,7 +219,7 @@ class Save {
     });
 
     XmlElement fonts =
-        _excel._xmlFiles['xl/styles.xml']!.findAllElements('fonts').first;
+        _excel._xmlFiles['xl/styles.xml']!.findAllElementsStar('fonts').first;
 
     var fontAttribute = fonts.getAttributeNode('count');
     if (fontAttribute != null) {
@@ -288,7 +288,7 @@ class Save {
     });
 
     XmlElement fills =
-        _excel._xmlFiles['xl/styles.xml']!.findAllElements('fills').first;
+        _excel._xmlFiles['xl/styles.xml']!.findAllElementsStar('fills').first;
 
     var fillAttribute = fills.getAttributeNode('count');
 
@@ -329,7 +329,7 @@ class Save {
     });
 
     XmlElement borders =
-        _excel._xmlFiles['xl/styles.xml']!.findAllElements('borders').first;
+        _excel._xmlFiles['xl/styles.xml']!.findAllElementsStar('borders').first;
     var borderAttribute = borders.getAttributeNode('count');
 
     if (borderAttribute != null) {
@@ -377,7 +377,7 @@ class Save {
 
     final styleSheet = _excel._xmlFiles['xl/styles.xml']!;
 
-    XmlElement celx = styleSheet.findAllElements('cellXfs').first;
+    XmlElement celx = styleSheet.findAllElementsStar('cellXfs').first;
     var cellAttribute = celx.getAttributeNode('count');
 
     if (cellAttribute != null) {
@@ -489,7 +489,7 @@ class Save {
 
     if (customNumberFormats.isNotEmpty) {
       var numFmtsElement = styleSheet
-          .findAllElements('numFmts')
+          .findAllElementsStar('numFmts')
           .whereType<XmlElement>()
           .firstOrNull;
       int count;
@@ -498,7 +498,7 @@ class Save {
 
         ///FIX: if no default numFormats were added in styles.xml - customNumFormats were added in wrong place,
         styleSheet
-            .findElements('styleSheet')
+            .findElementsStar('styleSheet')
             .first
             .children
             .insert(0, numFmtsElement);
@@ -562,7 +562,7 @@ class Save {
   }
 
   void _setColumns(Sheet sheetObject, XmlDocument xmlFile) {
-    final columnElements = xmlFile.findAllElements('cols');
+    final columnElements = xmlFile.findAllElementsStar('cols');
 
     if (sheetObject.getColumnWidths.isEmpty &&
         sheetObject.getColumnAutoFits.isEmpty) {
@@ -571,14 +571,14 @@ class Save {
       }
 
       final columns = columnElements.first;
-      final worksheet = xmlFile.findAllElements('worksheet').first;
+      final worksheet = xmlFile.findAllElementsStar('worksheet').first;
       worksheet.children.remove(columns);
       return;
     }
 
     if (columnElements.isEmpty) {
-      final worksheet = xmlFile.findAllElements('worksheet').first;
-      final sheetData = xmlFile.findAllElements('sheetData').first;
+      final worksheet = xmlFile.findAllElementsStar('worksheet').first;
+      final sheetData = xmlFile.findAllElementsStar('sheetData').first;
       final index = worksheet.children.indexOf(sheetData);
 
       worksheet.children.insert(index, XmlElement(XmlName('cols'), [], []));
@@ -652,7 +652,7 @@ class Save {
       return false;
     }
     List<XmlElement> sheetList =
-        _excel._xmlFiles['xl/workbook.xml']!.findAllElements('sheet').toList();
+        _excel._xmlFiles['xl/workbook.xml']!.findAllElementsStar('sheet').toList();
     XmlElement elementFound = XmlElement(XmlName(''));
 
     int position = -1;
@@ -673,7 +673,7 @@ class Save {
     }
 
     _excel._xmlFiles['xl/workbook.xml']!
-        .findAllElements('sheets')
+        .findAllElementsStar('sheets')
         .first
         .children
       ..removeAt(position)
@@ -691,9 +691,9 @@ class Save {
     final xmlFile = _excel._xmlFiles[_excel._xmlSheetId[sheetName]];
     if (xmlFile == null) return;
 
-    final sheetXmlElement = xmlFile.findAllElements("worksheet").first;
+    final sheetXmlElement = xmlFile.findAllElementsStar("worksheet").first;
 
-    final results = sheetXmlElement.findAllElements("headerFooter");
+    final results = sheetXmlElement.findAllElementsStar("headerFooter");
     if (results.isNotEmpty) {
       sheetXmlElement.children.remove(results.first);
     }
@@ -713,28 +713,28 @@ class Save {
           _excel._xmlFiles.containsKey(_excel._xmlSheetId[s])) {
         Iterable<XmlElement>? iterMergeElement = _excel
             ._xmlFiles[_excel._xmlSheetId[s]]
-            ?.findAllElements('mergeCells');
+            ?.findAllElementsStar('mergeCells');
         late XmlElement mergeElement;
         if (iterMergeElement?.isNotEmpty ?? false) {
           mergeElement = iterMergeElement!.first;
         } else {
           if ((_excel._xmlFiles[_excel._xmlSheetId[s]]
-                      ?.findAllElements('worksheet')
+                      ?.findAllElementsStar('worksheet')
                       .length ??
                   0) >
               0) {
             int index = _excel._xmlFiles[_excel._xmlSheetId[s]]!
-                .findAllElements('worksheet')
+                .findAllElementsStar('worksheet')
                 .first
                 .children
                 .indexOf(_excel._xmlFiles[_excel._xmlSheetId[s]]!
-                    .findAllElements("sheetData")
+                    .findAllElementsStar("sheetData")
                     .first);
             if (index == -1) {
               _damagedExcel();
             }
             _excel._xmlFiles[_excel._xmlSheetId[s]]!
-                .findAllElements('worksheet')
+                .findAllElementsStar('worksheet')
                 .first
                 .children
                 .insert(
@@ -743,7 +743,7 @@ class Save {
                         [XmlAttribute(XmlName('count'), '0')]));
 
             mergeElement = _excel._xmlFiles[_excel._xmlSheetId[s]]!
-                .findAllElements('mergeCells')
+                .findAllElementsStar('mergeCells')
                 .first;
           } else {
             _damagedExcel();
@@ -819,24 +819,24 @@ class Save {
           _excel._xmlSheetId.containsKey(s) &&
           _excel._xmlFiles.containsKey(_excel._xmlSheetId[s])) {
         var itrSheetViewsRTLElement = _excel._xmlFiles[_excel._xmlSheetId[s]]
-            ?.findAllElements('sheetViews');
+            ?.findAllElementsStar('sheetViews');
 
         if (itrSheetViewsRTLElement?.isNotEmpty ?? false) {
           var itrSheetViewRTLElement = _excel._xmlFiles[_excel._xmlSheetId[s]]
-              ?.findAllElements('sheetView');
+              ?.findAllElementsStar('sheetView');
 
           if (itrSheetViewRTLElement?.isNotEmpty ?? false) {
             /// clear all the children of the sheetViews here
 
             _excel._xmlFiles[_excel._xmlSheetId[s]]
-                ?.findAllElements('sheetViews')
+                ?.findAllElementsStar('sheetViews')
                 .first
                 .children
                 .clear();
           }
 
           _excel._xmlFiles[_excel._xmlSheetId[s]]
-              ?.findAllElements('sheetViews')
+              ?.findAllElementsStar('sheetViews')
               .first
               .children
               .add(XmlElement(
@@ -849,7 +849,7 @@ class Save {
               ));
         } else {
           _excel._xmlFiles[_excel._xmlSheetId[s]]
-              ?.findAllElements('worksheet')
+              ?.findAllElementsStar('worksheet')
               .first
               .children
               .add(XmlElement(XmlName('sheetViews'), [], [
@@ -875,7 +875,7 @@ class Save {
 
     XmlElement shareString = _excel
         ._xmlFiles['xl/${_excel._sharedStringsTarget}']!
-        .findAllElements('sst')
+        .findAllElementsStar('sst')
         .first;
 
     shareString.children.clear();
@@ -926,11 +926,11 @@ class Save {
       double? defaultRowHeight = sheetObject.defaultRowHeight;
       double? defaultColumnWidth = sheetObject.defaultColumnWidth;
 
-      XmlElement worksheetElement = xmlFile.findAllElements('worksheet').first;
+      XmlElement worksheetElement = xmlFile.findAllElementsStar('worksheet').first;
 
       XmlElement? sheetFormatPrElement =
-          worksheetElement.findElements('sheetFormatPr').isNotEmpty
-              ? worksheetElement.findElements('sheetFormatPr').first
+          worksheetElement.findElementsStar('sheetFormatPr').isNotEmpty
+              ? worksheetElement.findElementsStar('sheetFormatPr').first
               : null;
 
       if (sheetFormatPrElement != null) {

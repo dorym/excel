@@ -479,11 +479,11 @@ void main() {
     var oldSharedStringsDocument =
         XmlDocument.parse(utf8.decode(sharedStringsArchive.content));
     var oldCount = oldSharedStringsDocument
-        .findAllElements('sst')
+        .findAllElementsStar('sst')
         .first
         .getAttributeNode("count");
     var oldUniqueCount = oldSharedStringsDocument
-        .findAllElements('sst')
+        .findAllElementsStar('sst')
         .first
         .getAttributeNode("uniqueCount");
 
@@ -511,11 +511,11 @@ void main() {
     var newSharedStringsDocument =
         XmlDocument.parse(utf8.decode(newSharedStringsArchive.content));
     var newCount = newSharedStringsDocument
-        .findAllElements('sst')
+        .findAllElementsStar('sst')
         .first
         .getAttributeNode("count");
     var newUniqueCount = newSharedStringsDocument
-        .findAllElements('sst')
+        .findAllElementsStar('sst')
         .first
         .getAttributeNode("uniqueCount");
 

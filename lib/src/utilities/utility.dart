@@ -38,11 +38,11 @@ int lettersToNumeric(String letters) {
 }
 
 Iterable<XmlElement> _findRows(XmlElement table) {
-  return table.findElements('row');
+  return table.findElementsStar('row');
 }
 
 Iterable<XmlElement> _findCells(XmlElement row) {
-  return row.findElements('c');
+  return row.findElementsStar('c');
 }
 
 int? _getCellNumber(XmlElement cell) {

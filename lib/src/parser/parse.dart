@@ -41,7 +41,7 @@ class Parser {
       var document = XmlDocument.parse(utf8.decode(relations.content));
       _excel._xmlFiles['xl/_rels/workbook.xml.rels'] = document;
 
-      document.findAllElements('Relationship').forEach((node) {
+      document.findAllElementsStar('Relationship').forEach((node) {
         String? id = node.getAttribute('Id');
         String? target = node.getAttribute('Target');
         if (target != null) {
@@ -80,7 +80,7 @@ class Parser {
         int rIdNumber = _getAvailableRid();
 
         _excel._xmlFiles["xl/_rels/workbook.xml.rels"]
-            ?.findAllElements('Relationships')
+            ?.findAllElementsStar('Relationships')
             .first
             .children
             .add(XmlElement(
@@ -100,7 +100,7 @@ class Parser {
         bool contain = true;
 
         _excel._xmlFiles["[Content_Types].xml"]
-            ?.findAllElements('Override')
+            ?.findAllElementsStar('Override')
             .forEach((node) {
           var value = node.getAttribute('ContentType');
           if (value == content) {
@@ -109,7 +109,7 @@ class Parser {
         });
         if (contain) {
           _excel._xmlFiles["[Content_Types].xml"]
-              ?.findAllElements('Types')
+              ?.findAllElementsStar('Types')
               .first
               .children
               .add(XmlElement(
@@ -132,7 +132,7 @@ class Parser {
     var document = XmlDocument.parse(utf8.decode(sharedStrings.content));
     _excel._xmlFiles["xl/${_excel._sharedStringsTarget}"] = document;
 
-    document.findAllElements('si').forEach((node) {
+    document.findAllElementsStar('si').forEach((node) {
       _parseSharedString(node);
     });
   }
@@ -151,7 +151,7 @@ class Parser {
     var document = XmlDocument.parse(utf8.decode(workbook.content));
     _excel._xmlFiles["xl/workbook.xml"] = document;
 
-    document.findAllElements('sheet').forEach((node) {
+    document.findAllElementsStar('sheet').forEach((node) {
       if (run) {
         _parseTable(node);
       } else {
@@ -177,7 +177,7 @@ class Parser {
       final sheet = _excel._sheetMap[sheetName]!;
 
       final worksheetNode = sheetDataNode.parent;
-      worksheetNode!.findAllElements('mergeCell').forEach((element) {
+      worksheetNode!.findAllElementsStar('mergeCell').forEach((element) {
         String? ref = element.getAttribute('ref');
         if (ref != null && ref.contains(':') && ref.split(':').length == 2) {
           if (!sheet._spannedItems.contains(ref)) {
@@ -237,24 +237,25 @@ class Parser {
   }
 
   // Reading the styles from the excel file.
-  void _parseStyles(String _stylesTarget) {
-    var styles = _excel._archive.findFile('xl/$_stylesTarget');
+  void _parseStyles(String target) {
+    target = _excel.absTarget(target);
+    var styles = _excel._archive.findFile(target);
     if (styles != null) {
       styles.decompress();
       var document = XmlDocument.parse(utf8.decode(styles.content));
-      _excel._xmlFiles['xl/$_stylesTarget'] = document;
+      _excel._xmlFiles[target] = document;
 
       _excel._fontStyleList = <_FontStyle>[];
       _excel._patternFill = <String>[];
       _excel._cellStyleList = <CellStyle>[];
       _excel._borderSetList = <_BorderSet>[];
 
-      Iterable<XmlElement> fontList = document.findAllElements('font');
+      Iterable<XmlElement> fontList = document.findAllElementsStar('font');
 
-      document.findAllElements('patternFill').forEach((node) {
+      document.findAllElementsStar('patternFill').forEach((node) {
         String patternType = node.getAttribute('patternType') ?? '', rgb;
         if (node.children.isNotEmpty) {
-          node.findElements('fgColor').forEach((child) {
+          node.findElementsStar('fgColor').forEach((child) {
             rgb = child.getAttribute('rgb') ?? '';
             _excel._patternFill.add(rgb);
           });
@@ -263,7 +264,7 @@ class Parser {
         }
       });
 
-      document.findAllElements('border').forEach((node) {
+      document.findAllElementsStar('border').forEach((node) {
         final diagonalUp = !['0', 'false', null]
             .contains(node.getAttribute('diagonalUp')?.trim());
         final diagonalDown = !['0', 'false', null]
@@ -280,7 +281,7 @@ class Parser {
         for (var elementName in borderElementNamesList) {
           XmlElement? element;
           try {
-            element = node.findElements(elementName).single;
+            element = node.findElementsStar(elementName).single;
           } on StateError catch (_) {
             // Either there is no element, or there are too many ones.
             // Silently ignore this element.
@@ -293,7 +294,7 @@ class Parser {
 
           String? borderColorHex;
           try {
-            final color = element?.findElements('color').single;
+            final color = element?.findElementsStar('color').single;
             borderColorHex = color?.getAttribute('rgb')?.trim();
           } on StateError catch (_) {}
 
@@ -314,13 +315,14 @@ class Parser {
         _excel._borderSetList.add(borderSet);
       });
 
-      document.findAllElements('numFmts').forEach((node1) {
-        node1.findAllElements('numFmt').forEach((node) {
+      document.findAllElementsStar('numFmts').forEach((node1) {
+        node1.findAllElementsStar('numFmt').forEach((node) {
           final numFmtId = int.parse(node.getAttribute('numFmtId')!);
           final formatCode = node.getAttribute('formatCode')!;
           if (numFmtId < 164) {
-            throw Exception(
-                'custom numFmtId starts at 164 but found a value of $numFmtId');
+            // throw Exception(
+            //     'custom numFmtId starts at 164 but found a value of $numFmtId');
+            return;
           }
 
           _excel._numFormats
@@ -328,8 +330,8 @@ class Parser {
         });
       });
 
-      document.findAllElements('cellXfs').forEach((node1) {
-        node1.findAllElements('xf').forEach((node) {
+      document.findAllElementsStar('cellXfs').forEach((node1) {
+        node1.findAllElementsStar('xf').forEach((node) {
           final numFmtId = _getFontIndex(node, 'numFmtId');
           _excel._numFmtIds.add(numFmtId);
 
@@ -426,7 +428,7 @@ class Parser {
           }
 
           if (node.children.isNotEmpty) {
-            node.findElements('alignment').forEach((child) {
+            node.findElementsStar('alignment').forEach((child) {
               if (_getFontIndex(child, 'wrapText') == 1) {
                 textWrapping = TextWrapping.WrapText;
               } else if (_getFontIndex(child, 'shrinkToFit') == 1) {
@@ -498,7 +500,7 @@ class Parser {
   }
 
   dynamic _nodeChildren(XmlElement node, String child, {var attribute}) {
-    Iterable<XmlElement> ele = node.findElements(child);
+    Iterable<XmlElement> ele = node.findElementsStar(child);
     if (ele.isNotEmpty) {
       if (attribute != null) {
         var attr = ele.first.getAttribute(attribute);
@@ -528,7 +530,8 @@ class Parser {
 
   void _parseTable(XmlElement node) {
     var name = node.getAttribute('name')!;
-    var target = _worksheetTargets[node.getAttribute('r:id')];
+    var sheet_target = _worksheetTargets[node.getAttribute('r:id')];
+    var target = _excel.absTarget('$sheet_target');
 
     if (_excel._sheetMap['$name'] == null) {
       _excel._sheetMap['$name'] = Sheet._(_excel, '$name');
@@ -536,22 +539,22 @@ class Parser {
 
     Sheet sheetObject = _excel._sheetMap['$name']!;
 
-    var file = _excel._archive.findFile('xl/$target');
+    var file = _excel._archive.findFile(target);
     file!.decompress();
 
     var content = XmlDocument.parse(utf8.decode(file.content));
-    var worksheet = content.findElements('worksheet').first;
+    var worksheet = content.findElementsStar('worksheet').first;
 
     ///
     /// check for right to left view
     ///
-    var sheetView = worksheet.findAllElements('sheetView').toList();
+    var sheetView = worksheet.findAllElementsStar('sheetView').toList();
     if (sheetView.isNotEmpty) {
       var sheetViewNode = sheetView.first;
       var rtl = sheetViewNode.getAttribute('rightToLeft');
       sheetObject.isRTL = rtl != null && rtl == '1';
     }
-    var sheet = worksheet.findElements('sheetData').first;
+    var sheet = worksheet.findElementsStar('sheetData').first;
 
     _findRows(sheet).forEach((child) {
       _parseRow(child, sheetObject, name);
@@ -562,8 +565,8 @@ class Parser {
 
     _excel._sheets[name] = sheet;
 
-    _excel._xmlFiles['xl/$target'] = content;
-    _excel._xmlSheetId[name] = 'xl/$target';
+    _excel._xmlFiles[target] = content;
+    _excel._xmlSheetId[name] = target;
 
     _normalizeTable(sheetObject);
   }
@@ -605,56 +608,62 @@ class Parser {
     CellValue? value;
     String? type = node.getAttribute('t');
 
-    switch (type) {
-      // sharedString
-      case 's':
-        final sharedString = _excel._sharedStrings
-            .value(int.parse(_parseValue(node.findElements('v').first)));
-        value = TextCellValue(sharedString!.stringValue);
-        break;
-      // boolean
-      case 'b':
-        value = BoolCellValue(_parseValue(node.findElements('v').first) == '1');
-        break;
-      // error
-      case 'e':
-      // formula
-      case 'str':
-        value = FormulaCellValue(_parseValue(node.findElements('v').first));
-        break;
-      // inline string
-      case 'inlineStr':
-        // <c r='B2' t='inlineStr'>
-        // <is><t>Dartonico</t></is>
-        // </c>
-        value = TextCellValue(_parseValue(node.findAllElements('t').first));
-        break;
-      // number
-      case 'n':
-      default:
-        var formulaNode = node.findElements('f');
-        if (formulaNode.isNotEmpty) {
-          value = FormulaCellValue(_parseValue(formulaNode.first).toString());
-        } else {
-          final vNode = node.findElements('v').firstOrNull;
-          if (vNode == null) {
-            value = null;
-          } else if (s1 != null) {
-            final v = _parseValue(vNode);
-            var numFmtId = _excel._numFmtIds[s];
-            final numFormat = _excel._numFormats.getByNumFmtId(numFmtId);
-            if (numFormat == null) {
-              assert(
-                  false, 'found no number format spec for numFmtId $numFmtId');
-              value = NumFormat.defaultNumeric.read(v);
-            } else {
-              value = numFormat.read(v);
-            }
+    var value_item = node.findElementsStar('v').firstOrNull;
+    if (value_item != null) {
+      switch (type) {
+        // sharedString
+        case 's':
+          final sharedString = _excel._sharedStrings
+              .value(int.parse(_parseValue(node.findElementsStar('v').first)));
+          value = TextCellValue(sharedString!.stringValue);
+          break;
+        // boolean
+        case 'b':
+          value = BoolCellValue(
+              _parseValue(node.findElementsStar('v').first) == '1');
+          break;
+        // error
+        case 'e':
+        // formula
+        case 'str':
+          value =
+              FormulaCellValue(_parseValue(node.findElementsStar('v').first));
+          break;
+        // inline string
+        case 'inlineStr':
+          // <c r='B2' t='inlineStr'>
+          // <is><t>Dartonico</t></is>
+          // </c>
+          value =
+              TextCellValue(_parseValue(node.findAllElementsStar('t').first));
+          break;
+        // number
+        case 'n':
+        default:
+          var formulaNode = node.findElementsStar('f');
+          if (formulaNode.isNotEmpty) {
+            value = FormulaCellValue(_parseValue(formulaNode.first).toString());
           } else {
-            final v = _parseValue(vNode);
-            value = NumFormat.defaultNumeric.read(v);
+            final vNode = node.findElementsStar('v').firstOrNull;
+            if (vNode == null) {
+              value = null;
+            } else if (s1 != null) {
+              final v = _parseValue(vNode);
+              var numFmtId = _excel._numFmtIds[s];
+              final numFormat = _excel._numFormats.getByNumFmtId(numFmtId);
+              if (numFormat == null) {
+                assert(false,
+                    'found no number format spec for numFmtId $numFmtId');
+                value = NumFormat.defaultNumeric.read(v);
+              } else {
+                value = numFormat.read(v);
+              }
+            } else {
+              final v = _parseValue(vNode);
+              value = NumFormat.defaultNumeric.read(v);
+            }
           }
-        }
+      }
     }
 
     sheetObject.updateCell(
@@ -696,7 +705,7 @@ class Parser {
   void _createSheet(String newSheet) {
     /*
     List<XmlNode> list = _excel._xmlFiles['xl/workbook.xml']
-        .findAllElements('sheets')
+        .findAllElementsStar('sheets')
         .first
         .children;
     if (list.isEmpty) {
@@ -707,7 +716,7 @@ class Parser {
     List<int> sheetIdList = <int>[];
 
     _excel._xmlFiles['xl/workbook.xml']
-        ?.findAllElements('sheet')
+        ?.findAllElementsStar('sheet')
         .forEach((sheetIdNode) {
       var sheetId = sheetIdNode.getAttribute('sheetId');
       if (sheetId != null) {
@@ -740,7 +749,7 @@ class Parser {
     int ridNumber = _getAvailableRid();
 
     _excel._xmlFiles['xl/_rels/workbook.xml.rels']
-        ?.findAllElements('Relationships')
+        ?.findAllElementsStar('Relationships')
         .first
         .children
         .add(XmlElement(XmlName('Relationship'), <XmlAttribute>[
@@ -754,7 +763,7 @@ class Parser {
     }
 
     _excel._xmlFiles['xl/workbook.xml']
-        ?.findAllElements('sheets')
+        ?.findAllElementsStar('sheets')
         .first
         .children
         .add(XmlElement(
@@ -783,7 +792,7 @@ class Parser {
     _excel._xmlSheetId[newSheet] = 'xl/worksheets/sheet$sheetNumber.xml';
 
     _excel._xmlFiles['[Content_Types].xml']
-        ?.findAllElements('Types')
+        ?.findAllElementsStar('Types')
         .first
         .children
         .add(XmlElement(
@@ -796,13 +805,14 @@ class Parser {
           ],
         ));
     if (_excel._xmlFiles['xl/workbook.xml'] != null) {
-      _parseTable(
-          _excel._xmlFiles['xl/workbook.xml']!.findAllElements('sheet').last);
+      _parseTable(_excel._xmlFiles['xl/workbook.xml']!
+          .findAllElementsStar('sheet')
+          .last);
     }
   }
 
   void _parseHeaderFooter(XmlElement worksheet, Sheet sheetObject) {
-    final results = worksheet.findAllElements("headerFooter");
+    final results = worksheet.findAllElementsStar("headerFooter");
     if (results.isEmpty) return;
 
     final headerFooterElement = results.first;
@@ -816,7 +826,7 @@ class Parser {
       <sheetFormatPr baseColWidth="10" defaultColWidth="26.33203125" defaultRowHeight="13" x14ac:dyDescent="0.15" />
     */
     Iterable<XmlElement> results;
-    results = worksheet.findAllElements("sheetFormatPr");
+    results = worksheet.findAllElementsStar("sheetFormatPr");
     if (results.isNotEmpty) {
       results.forEach((element) {
         double? defaultColWidth;
@@ -846,7 +856,7 @@ class Parser {
       <col min="4" max="4" width="26.5" customWidth="1"/>, 
       <col min="6" max="6" width="31.33203125" customWidth="1"/>
     */
-    results = worksheet.findAllElements("col");
+    results = worksheet.findAllElementsStar("col");
     if (results.isNotEmpty) {
       results.forEach((element) {
         String? colAttribute =
@@ -869,7 +879,7 @@ class Parser {
       example XML content
       <row r="1" spans="1:2" ht="44" customHeight="1" x14ac:dyDescent="0.15">
     */
-    results = worksheet.findAllElements("row");
+    results = worksheet.findAllElementsStar("row");
     if (results.isNotEmpty) {
       results.forEach((element) {
         String? rowAttribute =

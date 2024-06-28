@@ -1,5 +1,15 @@
 part of excel;
 
+extension XlsxXmlFindExtension on XmlNode {
+  Iterable<XmlElement> findElementsStar(String name,
+          {String namespace = "*"}) =>
+      findElements(name, namespace: namespace);
+
+  Iterable<XmlElement> findAllElementsStar(String name,
+          {String namespace = "*"}) =>
+      findAllElements(name, namespace: namespace);
+}
+
 Excel _newExcel(Archive archive) {
   // Lookup at file format
   String? format;
@@ -120,6 +130,17 @@ class Excel {
     _availSheet(sheet);
 
     _sheetMap[sheet] = Sheet._clone(this, sheet, sheetObject);
+  }
+
+  ///
+  ///Return the relative path of a target.
+  ///This assumes that absolute path of a target is `xl/target`
+  ///
+  String absTarget(String target) {
+    if (target.isNotEmpty && target[0] == "/") {
+      return target.substring(1);
+    }
+    return "xl/${target}";
   }
 
   ///
@@ -283,7 +304,7 @@ class Excel {
       /// Remove from `xl/workbook.xml`
       ///
       _xmlFiles['xl/workbook.xml']
-          ?.findAllElements('sheets')
+          ?.findAllElementsStar('sheets')
           .first
           .children
           .removeWhere((element) {
@@ -353,7 +374,7 @@ class Excel {
   ///
   String? _getDefaultSheet() {
     Iterable<XmlElement>? elements =
-        _xmlFiles['xl/workbook.xml']?.findAllElements('sheet');
+        _xmlFiles['xl/workbook.xml']?.findAllElementsStar('sheet');
     XmlElement? _sheet;
     if (elements?.isNotEmpty ?? false) {
       _sheet = elements?.first;
